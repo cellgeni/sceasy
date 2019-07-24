@@ -103,6 +103,12 @@ loom2anndata <- function(
 
     anndata <- reticulate::import('anndata', convert = FALSE)
 
+    if (compareVersion(as.character(anndata[['__version__']]), '0.6.20') < 0)
+        message(paste(
+            "Warning: anndata <0.6.20 detected.",
+            "Upgrade to handle multi-dimensional embeddings."
+        ))
+
     adata <- anndata$read_loom(
         inFile, sparse = TRUE, cleanup = TRUE, X_name = main_layer,
         obs_names = obs_names, var_names = var_names
