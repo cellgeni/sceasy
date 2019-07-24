@@ -1,0 +1,14 @@
+Package: sceasy
+Type: Package
+Title: A package to help convert different single-cell data formats to each other
+Version: 0.0.1
+Authors@R: person('Ni', 'Huang', email='nh3@users.noreply.github.com', role=c('aut'))
+Description: Convert Seurat, SingleCellExperiment, Loom object to AnnData object
+Depends:
+    R (>= 3.5.1),
+    reticulate
+Imports:
+    Seurat (>= 3.0.1),
+    SingleCellExperiment (>= 1.4.0)
+License: GPL-3
+LazyDate: true
