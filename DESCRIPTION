@@ -2,7 +2,9 @@ Package: sceasy
 Type: Package
 Title: A package to help convert different single-cell data formats to each other
 Version: 0.0.1
-Authors@R: person('Ni', 'Huang', email='nh3@users.noreply.github.com', role=c('aut'))
+Authors@R: c(
+    person('Vladimir', 'Kiselev', email='wikiselev@users.noreply.github.com', role='cre'),
+    person('Ni', 'Huang', email='nh3@users.noreply.github.com', role='aut'))
 Description: Convert Seurat, SingleCellExperiment, Loom object to AnnData object
 Depends:
     R (>= 3.5.1),
