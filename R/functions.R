@@ -96,9 +96,11 @@ sce2anndata <- function(
 }
 
 loom2anndata <- function(
-    inFile, outFile = NULL, main_layer = 'spliced', obs_names = 'CellID',
-    var_names = 'Gene'
+    inFile, outFile = NULL, main_layer = c('spliced', 'unspliced'),
+    obs_names = 'CellID', var_names = 'Gene'
 ) {
+    main_layer <- match.arg(main_layer)
+
     anndata <- reticulate::import('anndata', convert = FALSE)
 
     adata <- anndata$read_loom(
