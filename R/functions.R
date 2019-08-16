@@ -1,5 +1,5 @@
 seurat2anndata <- function(
-    obj, outFile = NULL, main_layer = 'data', transfer_layers = NULL
+    obj, outFile = NULL, assay = 'RNA', main_layer = 'data', transfer_layers = NULL
 ) {
     main_layer <- match.arg(main_layer, c('data', 'counts', 'scale.data'))
     transfer_layers <- transfer_layers[
@@ -9,9 +9,9 @@ seurat2anndata <- function(
     if (compareVersion(as.character(obj@version), '3.0.0') < 0)
         obj <- Seurat::UpdateSeuratObject(object = obj)
 
-    X <- Seurat::GetAssayData(object = obj, assay = 'RNA', slot = main_layer)
+    X <- Seurat::GetAssayData(object = obj, assay = assay, slot = main_layer)
 
-    var <- Seurat::GetAssay(obj)@meta.features
+    var <- Seurat::GetAssay(obj, assay = assay)@meta.features
     if (ncol(var) == 0) var[['feature_name']] <- rownames(var)
 
     obsm <- NULL
@@ -27,7 +27,7 @@ seurat2anndata <- function(
 
     layers <- list()
     for (layer in transfer_layers) {
-        mat <- Seurat::GetAssayData(object = obj, assay = 'RNA', slot = layer)
+        mat <- Seurat::GetAssayData(object = obj, assay = assay, slot = layer)
         if (all(dim(mat) == dim(X))) layers[[layer]] <- Matrix::t(mat)
     }
 
