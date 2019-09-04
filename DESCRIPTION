@@ -11,6 +11,7 @@ Depends:
     reticulate
 Imports:
     Seurat (>= 3.0.1),
-    SingleCellExperiment (>= 1.4.0)
+    SingleCellExperiment (>= 1.4.0),
+    LoomExperiment (>= 1.1.5)
 License: GPL-3
 LazyDate: true

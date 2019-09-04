@@ -122,3 +122,11 @@ loom2anndata <- function(
 
     adata
 }
+
+sce2loom <- function(obj, outFile, main_layer = NULL, ...) {
+    writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
+}
+
+loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, ...) {
+    readExchangeableLoom(inFile, backed = FALSE, ...)
+}
