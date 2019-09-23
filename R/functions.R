@@ -4,7 +4,8 @@
     if (sum(k_singular) > 0)
         warning(paste('Dropping single category variables:'),
                 paste(colnames(df)[k_singular], collapse=', '))
-    df <- df[, !k_singular]
+        df <- df[, !k_singular, drop=F]
+    return(df)
 }
 
 seurat2anndata <- function(
@@ -52,7 +53,7 @@ seurat2anndata <- function(
     )
 
     if (!is.null(outFile))
-        anndata$AnnData$write(adata, outFile, compression = 'gzip')
+        adata$write(outFile, compression = 'gzip')
 
     adata
 }
