@@ -1,3 +1,12 @@
+.regularise_df <- function(df) {
+    if (ncol(df) == 0) df[['name']] <- rownames(df)
+    k_singular <- sapply(df, function(x) length(unique(x)) == 1)
+    if (sum(k_singular) > 0)
+        warning(paste('Dropping single category variables:'),
+                paste(colnames(df)[k_singular], collapse=', '))
+    df <- df[, !k_singular]
+}
+
 seurat2anndata <- function(
     obj, outFile = NULL, assay = 'RNA', main_layer = 'data', transfer_layers = NULL
 ) {
@@ -11,8 +20,9 @@ seurat2anndata <- function(
 
     X <- Seurat::GetAssayData(object = obj, assay = assay, slot = main_layer)
 
-    var <- Seurat::GetAssay(obj, assay = assay)@meta.features
-    if (ncol(var) == 0) var[['feature_name']] <- rownames(var)
+    obs <- .regularise_df(obj@meta.data)
+
+    var <- .regularise_df(Seurat::GetAssay(obj, assay = assay)@meta.features)
 
     obsm <- NULL
     reductions <- names(obj@reductions)
@@ -35,7 +45,7 @@ seurat2anndata <- function(
 
     adata <- anndata$AnnData(
         X = Matrix::t(X),
-        obs = obj@meta.data,
+        obs = obs,
         var = var,
         obsm = obsm,
         layers = layers
@@ -57,8 +67,9 @@ sce2anndata <- function(
 
     X <- SummarizedExperiment::assay(obj, main_layer)
 
-    var <- as.data.frame(SingleCellExperiment::rowData(obj))
-    if (ncol(var) == 0) var[['feature_name']] <- rownames(var)
+    obs <- .regularise_df(as.data.frame(SingleCellExperiment::colData(obj)))
+
+    var <- .regularise_df(as.data.frame(SingleCellExperiment::rowData(obj)))
 
     obsm <- NULL
     reductions <- SingleCellExperiment::reducedDimNames(obj)
@@ -83,7 +94,7 @@ sce2anndata <- function(
 
     adata <- anndata$AnnData(
         X = Matrix::t(X),
-        obs = as.data.frame(SingleCellExperiment::colData(obj)),
+        obs = obs,
         var = var,
         obsm = obsm,
         layers = layers
