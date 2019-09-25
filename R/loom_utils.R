@@ -3,15 +3,15 @@
 exchangeable_loom_version <- '3.0.0alpha'
 
 isExchangeableLoom <- function(h5f) {
-    attrs <- h5readAttributes(h5f, '/')
+    attrs <- rhdf5::h5readAttributes(h5f, '/')
     version <- attrs[['LOOM_SPEC_VERSION']]
     return(!is.null(version) && version == exchangeable_loom_version)
 }
 
 readDimNames <- function(h5f) {
-    cell_attr <- h5readAttributes(h5f, '/col_attrs')[['CellID']]
-    gene_attr <- h5readAttributes(h5f, '/row_attrs')[['Gene']]
-    source <- h5readAttributes(h5f, '/')[['created_from']]
+    cell_attr <- rhdf5::h5readAttributes(h5f, '/col_attrs')[['CellID']]
+    gene_attr <- rhdf5::h5readAttributes(h5f, '/row_attrs')[['Gene']]
+    source <- rhdf5::h5readAttributes(h5f, '/')[['created_from']]
     if (!is.null(source) && source == 'anndata') {
         if (is.null(cell_attr))
             cell_attr <- 'obs_names'
@@ -23,7 +23,7 @@ readDimNames <- function(h5f) {
 
 readManifest <- function(h5f) {
     tryCatch({
-        manifest <- data.frame(t(h5read(h5f, '/global/manifest')), stringsAsFactors=FALSE)
+        manifest <- data.frame(t(rhdf5::h5read(h5f, '/global/manifest')), stringsAsFactors=FALSE)
         colnames(manifest) <- c('loom_path', 'dtype', 'anndata_path', 'sce_path')
         return(manifest)
     },
@@ -101,15 +101,15 @@ makeManifest <- function(entries, dtype='array', loom_prefix='/global/', anndata
 }
 
 readExchangeableLoom <- function(filename, backed=TRUE) {
-    stopifnot(file.exists(filename), H5Fis_hdf5(filename))
-    h5f <- H5Fopen(filename, flag='H5F_ACC_RDONLY')
+    stopifnot(file.exists(filename), rhdf5::H5Fis_hdf5(filename))
+    h5f <- rhdf5::H5Fopen(filename, flag='H5F_ACC_RDONLY')
     if (!isExchangeableLoom(h5f)) {
-        H5Fclose(h5f)
+        rhdf5::H5Fclose(h5f)
         return(LoomExperiment::import(filename, type='SingleCellLoomExperiment'))
     }
     dim_names <- readDimNames(h5f)
     manifest <- readManifest(h5f)
-    h5closeAll()
+    rhdf5::h5closeAll()
 
     suppressWarnings(scle <- LoomExperiment::import(
             filename,
@@ -117,19 +117,19 @@ readExchangeableLoom <- function(filename, backed=TRUE) {
             rownames_attr=dim_names$row,
             colnames_attr=dim_names$col))
     if (!backed) {
-        for (i in seq_along(assays(scle))) {
-            assays(scle)[[i]] <- as(assays(scle)[[i]], 'dgCMatrix')
+        for (i in seq_along(SummarizedExperiment::assays(scle))) {
+            SummarizedExperiment::assays(scle)[[i]] <- as(SummarizedExperiment::assays(scle)[[i]], 'dgCMatrix')
         }
     }
 
-    h5f <- H5Fopen(filename, flag='H5F_ACC_RDONLY')
+    h5f <- rhdf5::H5Fopen(filename, flag='H5F_ACC_RDONLY')
 
     # Add appropriate assay name
-    mx_attrs <- h5readAttributes(h5f, '/matrix')
+    mx_attrs <- rhdf5::h5readAttributes(h5f, '/matrix')
     if ('assay' %in% names(mx_attrs)) {
-        names(assays(scle))[1] <- mx_attrs['assay']
+        names(SummarizedExperiment::assays(scle))[1] <- mx_attrs['assay']
     } else {
-        names(assays(scle))[1] <- 'counts'
+        names(SummarizedExperiment::assays(scle))[1] <- 'counts'
     }
 
     if (!is.null(manifest)) {
@@ -142,8 +142,8 @@ readExchangeableLoom <- function(filename, backed=TRUE) {
         is_rd <- startsWith(manifest$loom_path, '/global/reducedDims__')
         rd_paths <- manifest$loom_path[is_rd]
         names(rd_paths) <- sub('^@reducedDims@listData[$]', '', manifest$sce_path[is_rd])
-        reducedDims(scle) <- SimpleList(lapply(rd_paths, function(path) {
-            mat <- t(h5read(h5f, path))
+        SingleCellExperiment::reducedDims(scle) <- S4Vectors::SimpleList(lapply(rd_paths, function(path) {
+            mat <- t(rhdf5::h5read(h5f, path))
             rownames(mat) <- colnames(scle)
             mat
         }))
@@ -153,7 +153,7 @@ readExchangeableLoom <- function(filename, backed=TRUE) {
         src_paths <- manifest$loom_path[is_attr]
         tgt_paths <- manifest$sce_path[is_attr]
         attr_names <- substr(src_paths, 9, nchar(src_paths)-1)
-        global_attrs <- h5readAttributes(h5f, '/')
+        global_attrs <- rhdf5::h5readAttributes(h5f, '/')
         mtdt <- new.env(parent=emptyenv(), size=length(tgt_paths))
         for (i in seq_along(attr_names)) {
             v <- global_attrs[[ attr_names[i] ]]
@@ -167,7 +167,7 @@ readExchangeableLoom <- function(filename, backed=TRUE) {
         src_paths <- manifest$loom_path[is_ds]
         tgt_paths <- manifest$sce_path[is_ds]
         for (i in seq_along(tgt_paths)) {
-            v <- h5read(h5f, src_paths[i])
+            v <- rhdf5::h5read(h5f, src_paths[i])
             paths <- unlist(strsplit(sub('^@metadata[$]', '', tgt_paths[i]), '$', fixed=TRUE))
             nestedEnv(mtdt, paths, v)
         }
@@ -176,7 +176,7 @@ readExchangeableLoom <- function(filename, backed=TRUE) {
             scle@metadata[[name]] <- mtdt[[name]]
         }
     }
-    h5closeAll()
+    rhdf5::h5closeAll()
 
     return(as(scle, 'SingleCellExperiment'))
 }
@@ -194,8 +194,8 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
 
     # Handle reducedDims. Move embeddings out of reducedDims so they don't get
     # written to unwanted location by export().
-    rdims <- reducedDims(scle)
-    reducedDims(scle) <- SimpleList()
+    rdims <- SingleCellExperiment::reducedDims(scle)
+    SingleCellExperiment::reducedDims(scle) <- S4Vectors::SimpleList()
     if (!isEmpty(rdims)) {
         rdim_manifest <- makeManifest(
             names(rdims),
@@ -300,49 +300,49 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
                       main_layer, assayNames(scle)[1]),
         colnames_attr='obs_names',
         rownames_attr='var_names'))
-    h5closeAll()
+    rhdf5::h5closeAll()
 
     # Write extra bits
-    h5f <- H5Fopen(filename)
+    h5f <- rhdf5::H5Fopen(filename)
 
     # Write extra global attributes
-    h5writeAttribute(exchangeable_loom_version, h5f, 'LOOM_SPEC_VERSION')
-    h5writeAttribute('sce', h5f, 'created_from')
+    rhdf5::h5writeAttribute(exchangeable_loom_version, h5f, 'LOOM_SPEC_VERSION')
+    rhdf5::h5writeAttribute('sce', h5f, 'created_from')
 
     # Write column names of 'CellID' and 'Gene' as attributes of '/col_attrs' and '/row_attrs'
-    h5g_ca <- H5Gopen(h5f, '/col_attrs')
+    h5g_ca <- rhdf5::H5Gopen(h5f, '/col_attrs')
     h5writeAttribute('obs_names', h5g_ca, 'CellID')
-    h5g_ra <- H5Gopen(h5f, '/row_attrs')
-    h5writeAttribute('var_names', h5g_ra, 'Gene')
+    h5g_ra <- rhdf5::H5Gopen(h5f, '/row_attrs')
+    rhdf5::h5writeAttribute('var_names', h5g_ra, 'Gene')
 
     # Write primary asssay name as attribute of '/matrix'
-    h5d_mx <- H5Dopen(h5f, '/matrix')
-    h5writeAttribute('assay', h5d_mx, names(assays(scle))[1])
+    h5d_mx <- rhdf5::H5Dopen(h5f, '/matrix')
+    rhdf5::h5writeAttribute('assay', h5d_mx, names(SummarizedExperiment::assays(scle))[1])
 
     # Write manifest
-    h5createGroup(h5f, '/global')
+    rhdf5::h5createGroup(h5f, '/global')
     if (!is.null(manifest)) {
         manifest <- manifest[order(manifest$dtype, manifest$loom_path), ]
-        h5write(t(manifest), h5f, '/global/manifest')
+        rhdf5::h5write(t(manifest), h5f, '/global/manifest')
     }
 
     # Write reducedDims
     for (i in seq_along(rdims)) {
         rdim <- rdims[[i]]
         loom_path <- rdim_manifest$loom_path[i]
-        h5write(t(rdim), h5f, loom_path)
+        rhdf5::h5write(t(rdim), h5f, loom_path)
     }
 
     # Write extra global datasets
     for (i in seq_along(datasets)) {
         dts <- datasets[[i]]
         loom_path <- dts_manifest$loom_path[i]
-        h5write(dts, h5f, loom_path)
+        rhdf5::h5write(dts, h5f, loom_path)
     }
 
     # Remove '/col_attrs/reducedDims' to make anndata happy
-    h5delete(h5f, '/col_attrs/reducedDims')
-    h5closeAll()
+    rhdf5::h5delete(h5f, '/col_attrs/reducedDims')
+    rhdf5::h5closeAll()
 
     if (return_manifest) {
         return(manifest)
