@@ -102,7 +102,7 @@ sce2anndata <- function(
     )
 
     if (!is.null(outFile))
-        anndata$AnnData$write(adata, outFile, compression = 'gzip')
+        adata$write(outFile, compression = 'gzip')
 
     adata
 }
@@ -140,5 +140,9 @@ sce2loom <- function(obj, outFile, main_layer = NULL, ...) {
 }
 
 loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, ...) {
-    readExchangeableLoom(inFile, backed = FALSE, ...)
+    sce <- readExchangeableLoom(inFile, backed = FALSE, ...)
+    if (!is.null(outFile))
+        saveRDS(sce, outFile)
+
+    sce
 }
