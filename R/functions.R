@@ -130,7 +130,7 @@ loom2anndata <- function(
     anndata$AnnData$var_names_make_unique(adata)
 
     if (!is.null(outFile))
-        anndata$AnnData$write(adata, outFile, compression = 'gzip')
+        adata$write(outFile, compression = 'gzip')
 
     adata
 }
