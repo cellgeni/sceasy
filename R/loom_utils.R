@@ -185,18 +185,20 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     scle <- LoomExperiment::SingleCellLoomExperiment(sce)
 
     # Clean rowData and colData
-    row_fct_idx <- sapply(rowData(scle), is.factor)
-    rowData(scle)[row_fct_idx] <- lapply(
-        rowData(scle)[row_fct_idx], function(x) type.convert(as.character(x), as.is=TRUE))
-    col_fct_idx <- sapply(colData(scle), is.factor)
-    colData(scle)[col_fct_idx] <- lapply(
-        colData(scle)[col_fct_idx], function(x) type.convert(as.character(x), as.is=TRUE))
+    row_fct_idx <- sapply(SummarizedExperiment::rowData(scle), is.factor)
+    SummarizedExperiment::rowData(scle)[row_fct_idx] <- lapply(
+        SummarizedExperiment::rowData(scle)[row_fct_idx],
+        function(x) type.convert(as.character(x), as.is=TRUE))
+    col_fct_idx <- sapply(SummarizedExperiment::colData(scle), is.factor)
+    SummarizedExperiment::colData(scle)[col_fct_idx] <- lapply(
+        SummarizedExperiment::colData(scle)[col_fct_idx],
+        function(x) type.convert(as.character(x), as.is=TRUE))
 
     # Handle reducedDims. Move embeddings out of reducedDims so they don't get
     # written to unwanted location by export().
     rdims <- SingleCellExperiment::reducedDims(scle)
     SingleCellExperiment::reducedDims(scle) <- S4Vectors::SimpleList()
-    if (!isEmpty(rdims)) {
+    if (!S4Vectors::isEmpty(rdims)) {
         rdim_manifest <- makeManifest(
             names(rdims),
             dtype='array',
@@ -208,7 +210,7 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     }
 
     # Handle graphs. They get written by export() but we still need to record the paths.
-    if (!isEmpty(colGraphs(scle))) {
+    if (!S4Vectors::isEmpty(colGraphs(scle))) {
         colgraph_manifest <- makeManifest(
             names(colGraphs(scle)),
             dtype='graph',
@@ -218,7 +220,7 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     } else {
         colgraph_manifest <- NULL
     }
-    if (!isEmpty(rowGraphs(scle))) {
+    if (!S4Vectors::isEmpty(rowGraphs(scle))) {
         rowgraph_manifest <- makeManifest(
             names(rowGraphs(scle)),
             dtype='graph',
@@ -231,7 +233,7 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
 
     # Handle metadata. Flatten nested lists to make export() happy. Scalars go
     # to /.attrs, others go to /global
-    if (length(metadata(scle)) > 0) {
+    if (length(S4Vectors::metadata(scle)) > 0) {
         mtdt <- new.env(parent=emptyenv())
         flattenNestedListToEnv(scle@metadata, mtdt)
         mtdt <- lapply(mtdt, function(x) {
@@ -253,12 +255,12 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
         is_attr <- is_attr & !grepl('__', names(mtdt))
 
         # Let export handle attributes
-        metadata(scle) <- mtdt[is_attr]
+        S4Vectors::metadata(scle) <- mtdt[is_attr]
 
         excluded_from_manifest <- c('LOOM_SPEC_VERSION', 'CreationDate', 'last_modified',
                             'CreatedWith', 'LoomExperiment-class', 'created_from',
                             'last_modified_by')
-        attr_names <- names(metadata(scle))
+        attr_names <- names(S4Vectors::metadata(scle))
         attr_names <- attr_names[!attr_names %in% excluded_from_manifest]
         if (length(attr_names) > 0) {
             attr_manifest <- makeManifest(
@@ -296,8 +298,8 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     suppressWarnings(export(
         scle,
         filename,
-        matrix=ifelse(!is.null(main_layer) && main_layer %in% assayNames(scle),
-                      main_layer, assayNames(scle)[1]),
+        matrix=ifelse(!is.null(main_layer) && main_layer %in% SummarizedExperiment::assayNames(scle),
+                      main_layer, SummarizedExperiment::assayNames(scle)[1]),
         colnames_attr='obs_names',
         rownames_attr='var_names'))
     rhdf5::h5closeAll()
@@ -311,7 +313,7 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
 
     # Write column names of 'CellID' and 'Gene' as attributes of '/col_attrs' and '/row_attrs'
     h5g_ca <- rhdf5::H5Gopen(h5f, '/col_attrs')
-    h5writeAttribute('obs_names', h5g_ca, 'CellID')
+    rhdf5::h5writeAttribute('obs_names', h5g_ca, 'CellID')
     h5g_ra <- rhdf5::H5Gopen(h5f, '/row_attrs')
     rhdf5::h5writeAttribute('var_names', h5g_ra, 'Gene')
 
