@@ -135,6 +135,14 @@ loom2anndata <- function(
     adata
 }
 
+seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
+    sce <- Seurat::as.SingleCellExperiment(obj, assay=assay, ...)
+    if (!is.null(outFile))
+        saveRDS(sce, outFile)
+
+    sce
+}
+
 sce2loom <- function(obj, outFile, main_layer = NULL, ...) {
     writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
 }
