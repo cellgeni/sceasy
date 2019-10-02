@@ -3,9 +3,10 @@ Type: Package
 Title: A package to help convert different single-cell data formats to each other
 Version: 0.0.1
 Authors@R: c(
-    person('Ni', 'Huang', email='nh3@users.noreply.github.com', role='cre'),
-    person('Vladimir', 'Kiselev', email='wikiselev@users.noreply.github.com', role='aut'))
-Description: Convert Seurat, SingleCellExperiment, Loom object to AnnData object
+    person('Vladimir', 'Kiselev', email='wikiselev@users.noreply.github.com', role='cre'),
+    person('Ni', 'Huang', email='nh3@users.noreply.github.com', role='aut'))
+Description: Convert Seurat, SingleCellExperiment, Loom object to AnnData object.
+             Convert SingleCellExperiment object to and from Loom object.
 Depends:
     R (>= 3.5.1),
     reticulate
@@ -13,5 +14,8 @@ Imports:
     Seurat (>= 3.0.1),
     SingleCellExperiment (>= 1.4.0),
     LoomExperiment (>= 1.1.5)
+SystemRequirements:
+    anndata,
+    loompy
 License: GPL-3
 LazyDate: true
