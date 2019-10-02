@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-exchangeable_loom_version <- '3.0.0alpha'
+exchangeable_loom_version <- '3.0.0'
 
 isExchangeableLoom <- function(h5f) {
     attrs <- rhdf5::h5readAttributes(h5f, '/')
@@ -23,7 +23,7 @@ readDimNames <- function(h5f) {
 
 readManifest <- function(h5f) {
     tryCatch({
-        manifest <- data.frame(t(rhdf5::h5read(h5f, '/global/manifest')), stringsAsFactors=FALSE)
+        manifest <- data.frame(t(rhdf5::h5read(h5f, '/attr/manifest')), stringsAsFactors=FALSE)
         colnames(manifest) <- c('loom_path', 'dtype', 'anndata_path', 'sce_path')
         return(manifest)
     },
@@ -69,7 +69,7 @@ flattenNestedListToEnv <- function(x, e, prefix=NULL) {
     invisible()
 }
 
-makeManifest <- function(entries, dtype='array', loom_prefix='/global/', anndata_prefix='/uns/',
+makeManifest <- function(entries, dtype='array', loom_prefix='/attr/', anndata_prefix='/uns/',
                          sce_prefix='@metadata$') {
     n <- length(entries)
     if (is.list(entries)) {
@@ -139,7 +139,7 @@ readExchangeableLoom <- function(filename, backed=TRUE) {
                     startsWith(manifest$loom_path, '/row_graphs/'))
 
         # Handle reducedDims
-        is_rd <- startsWith(manifest$loom_path, '/global/reducedDims__')
+        is_rd <- startsWith(manifest$loom_path, '/attr/reducedDims__')
         rd_paths <- manifest$loom_path[is_rd]
         names(rd_paths) <- sub('^@reducedDims@listData[$]', '', manifest$sce_path[is_rd])
         SingleCellExperiment::reducedDims(scle) <- S4Vectors::SimpleList(lapply(rd_paths, function(path) {
@@ -202,7 +202,7 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
         rdim_manifest <- makeManifest(
             names(rdims),
             dtype='array',
-            loom_prefix='/global/reducedDims__',
+            loom_prefix='/attr/reducedDims__',
             anndata_prefix='/obsm/X_',
             sce_prefix='@reducedDims@listData$')
     } else {
@@ -210,9 +210,9 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     }
 
     # Handle graphs. They get written by export() but we still need to record the paths.
-    if (!S4Vectors::isEmpty(colGraphs(scle))) {
+    if (!S4Vectors::isEmpty(LoomExperiment::colGraphs(scle))) {
         colgraph_manifest <- makeManifest(
-            names(colGraphs(scle)),
+            names(LoomExperiment::colGraphs(scle)),
             dtype='graph',
             loom_prefix='/col_graphs/',
             anndata_prefix='/uns/',
@@ -220,9 +220,9 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     } else {
         colgraph_manifest <- NULL
     }
-    if (!S4Vectors::isEmpty(rowGraphs(scle))) {
+    if (!S4Vectors::isEmpty(LoomExperiment::rowGraphs(scle))) {
         rowgraph_manifest <- makeManifest(
-            names(rowGraphs(scle)),
+            names(LoomExperiment::rowGraphs(scle)),
             dtype='graph',
             loom_prefix='/row_graphs/',
             anndata_prefix=NULL,
@@ -232,7 +232,7 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     }
 
     # Handle metadata. Flatten nested lists to make export() happy. Scalars go
-    # to /.attrs, others go to /global
+    # to /.attrs, others go to /attr
     if (length(S4Vectors::metadata(scle)) > 0) {
         mtdt <- new.env(parent=emptyenv())
         flattenNestedListToEnv(scle@metadata, mtdt)
@@ -278,7 +278,7 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
             dts_manifest <- makeManifest(
                 datasets,
                 dtype=NULL,
-                loom_prefix='/global/',
+                loom_prefix='/attr/',
                 anndata_prefix='/uns/',
                 sce_prefix='@metadata$')
         } else {
@@ -293,9 +293,8 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     manifest <- rbind(attr_manifest, dts_manifest, rdim_manifest, colgraph_manifest, rowgraph_manifest)
 
     # Write to loom by LoomExperiment::export
-    if (file.exists(filename))
-        file.remove(filename)
-    suppressWarnings(export(
+    if (file.exists(filename)) file.remove(filename)
+    suppressWarnings(LoomExperiment::export(
         scle,
         filename,
         matrix=ifelse(!is.null(main_layer) && main_layer %in% SummarizedExperiment::assayNames(scle),
@@ -322,10 +321,10 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
     rhdf5::h5writeAttribute('assay', h5d_mx, names(SummarizedExperiment::assays(scle))[1])
 
     # Write manifest
-    rhdf5::h5createGroup(h5f, '/global')
+    rhdf5::h5createGroup(h5f, '/attr')
     if (!is.null(manifest)) {
         manifest <- manifest[order(manifest$dtype, manifest$loom_path), ]
-        rhdf5::h5write(t(manifest), h5f, '/global/manifest')
+        rhdf5::h5write(t(manifest), h5f, '/attr/manifest')
     }
 
     # Write reducedDims
