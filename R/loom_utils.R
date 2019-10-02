@@ -292,6 +292,11 @@ writeExchangeableLoom <- function(sce, filename, main_layer=NULL, return_manifes
 
     manifest <- rbind(attr_manifest, dts_manifest, rdim_manifest, colgraph_manifest, rowgraph_manifest)
 
+    # LoomExperiment currently handles sparse matrix incorrectly, so convert to dense for now
+    for (assay_name in SummarizedExperiment::assayNames(scle)) {
+        if (class(SummarizedExperiment::assays(scle)[[assay_name]]) == 'dgCMatrix')
+            SummarizedExperiment::assays(scle)[[assay_name]] <- as.matrix(SummarizedExperiment::assays(scle)[[assay_name]])
+    }
     # Write to loom by LoomExperiment::export
     if (file.exists(filename)) file.remove(filename)
     suppressWarnings(LoomExperiment::export(
