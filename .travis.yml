@@ -1,0 +1,25 @@
+language: r
+r: bioc-release
+
+bioc_packages:
+    - SingleCellExperiment
+    - LoomExperiment
+
+before_install:
+    - sudo pip install scipy==1.2.1 anndata==0.6.19 loompy==2.0.17
+
+script:
+    - Rscript -e 'library(sceasy)'
+              -e 'srt <- Seurat::pbmc_small'
+              -e 'dir.create("data")'
+              -e 'sceasy::convertFormat(srt, from="seurat", to="anndata", outFile="data/pbmc3k-small_seurat3_anndata.h5ad")'
+              -e 'sce <- sceasy::convertFormat(srt, from="seurat", to="sce", outFile="data/pbmc3k-small_seurat3_sce.rds")'
+              -e 'sceasy::convertFormat(sce, from="sce", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_anndata.h5ad")'
+              -e 'sceasy::convertFormat(sce, from="sce", to="loom", outFile="data/pbmc3k-small_seurat3_sce_loom.loom")'
+              -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_loom_anndata.h5ad")'
+              -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="sce", outFile="data/pbmc3k-small_seurat3_sce_loom_sce.rds", main_layer_name="scaled")'
+
+cache: packages
+
+before_cache:
+  - Rscript -e 'remove.packages("sceasy")'
