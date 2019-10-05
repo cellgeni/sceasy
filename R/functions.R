@@ -147,8 +147,8 @@ sce2loom <- function(obj, outFile, main_layer = NULL, ...) {
     writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
 }
 
-loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, ...) {
-    sce <- readExchangeableLoom(inFile, backed = FALSE, ...)
+loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name = NULL, ...) {
+    sce <- readExchangeableLoom(inFile, backed = FALSE, main_layer_name = main_layer_name, ...)
     if (!is.null(outFile))
         saveRDS(sce, outFile)
 

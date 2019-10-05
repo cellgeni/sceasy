@@ -100,7 +100,7 @@ makeManifest <- function(entries, dtype='array', loom_prefix='/attr/', anndata_p
                       sce_path=sce_paths, stringsAsFactors=FALSE))
 }
 
-readExchangeableLoom <- function(filename, backed=TRUE) {
+readExchangeableLoom <- function(filename, backed=TRUE, main_layer_name=NULL) {
     stopifnot(file.exists(filename), rhdf5::H5Fis_hdf5(filename))
     h5f <- rhdf5::H5Fopen(filename, flag='H5F_ACC_RDONLY')
     if (!isExchangeableLoom(h5f)) {
@@ -126,7 +126,9 @@ readExchangeableLoom <- function(filename, backed=TRUE) {
 
     # Add appropriate assay name
     mx_attrs <- rhdf5::h5readAttributes(h5f, '/matrix')
-    if ('assay' %in% names(mx_attrs)) {
+    if (!is.null(main_layer_name)) {
+        names(SummarizedExperiment::assays(scle))[1] <- main_layer_name
+    } else if ('assay' %in% names(mx_attrs)) {
         names(SummarizedExperiment::assays(scle))[1] <- mx_attrs['assay']
     } else {
         names(SummarizedExperiment::assays(scle))[1] <- 'counts'
