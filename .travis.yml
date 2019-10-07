@@ -1,25 +1,57 @@
-language: r
-r: bioc-release
-
-bioc_packages:
-    - SingleCellExperiment
-    - LoomExperiment
-
 before_install:
-    - sudo pip install scipy==1.2.1 anndata==0.6.19 loompy==2.0.17
+  - if test -e $HOME/miniconda/bin; then
+      echo "miniconda already installed.";
+      export PATH="$HOME/miniconda/bin:$PATH";
+    else
+      if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+      else
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      fi;
+
+      rm -rf $HOME/miniconda;
+      bash miniconda.sh -b -p $HOME/miniconda;
+      export PATH="$HOME/miniconda/bin:$PATH";
+      hash -r;
+
+      conda config --add channels defaults;
+      conda config --add channels bioconda;
+      conda config --add channels conda-forge;
+
+      conda config --set always_yes yes --set changeps1 no;
+
+      conda update -q -n base conda;
+
+      conda info -a;
+    fi
+
+  - export TEST_ENV="test";
+    conda create -n $TEST_ENV r-seurat=3 bioconductor-singlecellexperiment bioconductor-loomexperiment r-reticulate r-devtools scipy=1.2.1 anndata=0.6.19 loompy=2
+
+install:
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - source activate "$TEST_ENV"
+  - R CMD INSTALL .
+
+before_script:
+  - mkdir -p data
 
 script:
-    - Rscript -e 'library(sceasy)'
-              -e 'srt <- Seurat::pbmc_small'
-              -e 'dir.create("data")'
-              -e 'sceasy::convertFormat(srt, from="seurat", to="anndata", outFile="data/pbmc3k-small_seurat3_anndata.h5ad")'
-              -e 'sce <- sceasy::convertFormat(srt, from="seurat", to="sce", outFile="data/pbmc3k-small_seurat3_sce.rds")'
-              -e 'sceasy::convertFormat(sce, from="sce", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_anndata.h5ad")'
-              -e 'sceasy::convertFormat(sce, from="sce", to="loom", outFile="data/pbmc3k-small_seurat3_sce_loom.loom")'
-              -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_loom_anndata.h5ad")'
-              -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="sce", outFile="data/pbmc3k-small_seurat3_sce_loom_sce.rds", main_layer_name="scaled")'
+  - Rscript -e 'library(sceasy)'
+            -e 'srt <- Seurat::pbmc_small'
+            -e 'dir.create("data")'
+            -e 'sceasy::convertFormat(srt, from="seurat", to="anndata", outFile="data/pbmc3k-small_seurat3_anndata.h5ad")'
+            -e 'sce <- sceasy::convertFormat(srt, from="seurat", to="sce", outFile="data/pbmc3k-small_seurat3_sce.rds")'
+            -e 'sceasy::convertFormat(sce, from="sce", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_anndata.h5ad")'
+            -e 'sceasy::convertFormat(sce, from="sce", to="loom", outFile="data/pbmc3k-small_seurat3_sce_loom.loom")'
+            -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_loom_anndata.h5ad")'
+            -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="sce", outFile="data/pbmc3k-small_seurat3_sce_loom_sce.rds", main_layer_name="scaled")'
 
-cache: packages
+cache:
+  directories:
+    - $HOME/miniconda
 
 before_cache:
+  - if ! [[ $TRAVIS_TAG ]]; then rm -rf $HOME/miniconda/conda-bld; fi
   - Rscript -e 'remove.packages("sceasy")'
+  - rm -rf $HOME/miniconda/locks $HOME/miniconda/pkgs $HOME/miniconda/var $HOME/miniconda/conda-meta/history
