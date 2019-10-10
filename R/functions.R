@@ -1,10 +1,13 @@
-.regularise_df <- function(df) {
+.regularise_df <- function(df, drop_single_values = TRUE) {
     if (ncol(df) == 0) df[['name']] <- rownames(df)
-    k_singular <- sapply(df, function(x) length(unique(x)) == 1)
-    if (sum(k_singular) > 0)
-        warning(paste('Dropping single category variables:'),
-                paste(colnames(df)[k_singular], collapse=', '))
-        df <- df[, !k_singular, drop=F]
+    if (drop_single_values) {
+        k_singular <- sapply(df, function(x) length(unique(x)) == 1)
+        if (sum(k_singular) > 0)
+            warning(paste('Dropping single category variables:'),
+                    paste(colnames(df)[k_singular], collapse=', '))
+            df <- df[, !k_singular, drop=F]
+        if (ncol(df) == 0) df[['name']] <- rownames(df)
+    }
     return(df)
 }
 
@@ -144,6 +147,8 @@ seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
 }
 
 sce2loom <- function(obj, outFile, main_layer = NULL, ...) {
+    SingleCellExperiment::colData(obj) <- .regularise_df(SingleCellExperiment::colData(obj))
+    SingleCellExperiment::rowData(obj) <- .regularise_df(SingleCellExperiment::rowData(obj))
     writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
 }
 
