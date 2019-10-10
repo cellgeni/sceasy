@@ -71,9 +71,9 @@ sce2anndata <- function(
 
     X <- SummarizedExperiment::assay(obj, main_layer)
 
-    obs <- .regularise_df(as.data.frame(SingleCellExperiment::colData(obj)))
+    obs <- .regularise_df(as.data.frame(SummarizedExperiment::colData(obj)))
 
-    var <- .regularise_df(as.data.frame(SingleCellExperiment::rowData(obj)))
+    var <- .regularise_df(as.data.frame(SummarizedExperiment::rowData(obj)))
 
     obsm <- NULL
     reductions <- SingleCellExperiment::reducedDimNames(obj)
@@ -147,8 +147,8 @@ seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
 }
 
 sce2loom <- function(obj, outFile, main_layer = NULL, ...) {
-    SingleCellExperiment::colData(obj) <- .regularise_df(SingleCellExperiment::colData(obj))
-    SingleCellExperiment::rowData(obj) <- .regularise_df(SingleCellExperiment::rowData(obj))
+    SummarizedExperiment::colData(obj) <- .regularise_df(SummarizedExperiment::colData(obj))
+    SummarizedExperiment::rowData(obj) <- .regularise_df(SummarizedExperiment::rowData(obj))
     writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
 }
 
