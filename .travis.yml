@@ -2,6 +2,7 @@ before_install:
   - if test -e $HOME/miniconda/bin; then
       echo "miniconda already installed.";
       export PATH="$HOME/miniconda/bin:$PATH";
+      export TEST_ENV="test";
     else
       if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
         wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -23,15 +24,13 @@ before_install:
       conda update -q -n base conda;
 
       conda info -a;
-    fi
 
-  - export TEST_ENV="test";
-
-  - if test -e $HOME/miniconda/$TEST_ENV/lib/R/library/reticulate; then
-      echo "test env already created.";
-    else
+      export TEST_ENV="test";
       conda create -q -y -n $TEST_ENV r-seurat=3 bioconductor-singlecellexperiment bioconductor-loomexperiment r-reticulate r-devtools scipy=1.2.1 anndata=0.6.19 loompy=2;
     fi
+
+  - echo "$TEST_ENV";
+    ls "$HOME/miniconda/$TEST_ENV/lib/R/library/reticulate";
 
 install:
   - source activate "$TEST_ENV"
