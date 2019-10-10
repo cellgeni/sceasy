@@ -26,10 +26,14 @@ before_install:
     fi
 
   - export TEST_ENV="test";
-    conda create -n $TEST_ENV r-seurat=3 bioconductor-singlecellexperiment bioconductor-loomexperiment r-reticulate r-devtools scipy=1.2.1 anndata=0.6.19 loompy=2
+
+  - if test -e $HOME/miniconda/$TEST_ENV/lib/R/library/reticulate; then
+      echo "test env already created.";
+    else
+      conda create -q -y -n $TEST_ENV r-seurat=3 bioconductor-singlecellexperiment bioconductor-loomexperiment r-reticulate r-devtools scipy=1.2.1 anndata=0.6.19 loompy=2;
+    fi
 
 install:
-  - export PATH="$HOME/miniconda/bin:$PATH"
   - source activate "$TEST_ENV"
   - R CMD INSTALL .
 
