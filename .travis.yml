@@ -33,7 +33,7 @@ before_install:
       conda config --add channels defaults;
       conda config --add channels bioconda;
       conda config --add channels conda-forge;
-      conda create -q -y -n $TEST_ENV r-seurat=3 bioconductor-singlecellexperiment bioconductor-loomexperiment r-reticulate r-devtools scipy=1.2.1 anndata=0.6.19 loompy=2;
+      conda create -q -y -n $TEST_ENV r-seurat=3 bioconductor-singlecellexperiment bioconductor-loomexperiment r-reticulate r-devtools scipy=1.2.1 anndata=0.6.19 loompy=2 h5py=2.9.0;
     fi
 
 install:

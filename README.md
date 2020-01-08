@@ -43,41 +43,41 @@ loompy <- reticulate::import('loompy')
 **Seurat to AnnData**
 
 ```
-sceasy:::convertFormat(seurat_object, from="seurat", to="anndata",
+sceasy::convertFormat(seurat_object, from="seurat", to="anndata",
                        outFile='filename.h5ad')
 ```
                        
 **Seurat to SingleCellExperiment**
 
 ```
-sceasy:::convertFormat(seurat_object, from="seurat", to="sce",
+sceasy::convertFormat(seurat_object, from="seurat", to="sce",
                        outFile='filename.rds')
 ```
    
 **SingleCellExperiment to AnnData**
 
 ```
-sceasy:::convertFormat(sce_object, from="sce", to="anndata",
+sceasy::convertFormat(sce_object, from="sce", to="anndata",
                        outFile='filename.h5ad')
 ```
                        
 **SingleCellExperiment to Loom**
 
 ```
-sceasy:::convertFormat(sce_object, from="sce", to="loom",
+sceasy::convertFormat(sce_object, from="sce", to="loom",
                        outFile='filename.loom')
 ```
                        
 **Loom to AnnData**
 
 ```
-sceasy:::convertFormat('filename.loom', from="loom", to="anndata",
+sceasy::convertFormat('filename.loom', from="loom", to="anndata",
                        outFile='filename.h5ad')
 ```
                        
 **Loom to SingleCellExperiment**
 
 ```
-sceasy:::convertFormat('filename.loom', from="loom", to="sce",
+sceasy::convertFormat('filename.loom', from="loom", to="sce",
                        outFile='filename.rds')
 ```
