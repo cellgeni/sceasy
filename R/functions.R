@@ -90,7 +90,7 @@ sce2anndata <- function(
 
     layers <- list()
     for (layer in transfer_layers) {
-        mat <- SummarizedExperiment::assay(obj, name)
+        mat <- SummarizedExperiment::assay(obj, layer)
         if (all(dim(mat) == dim(X))) layers[[layer]] <- Matrix::t(mat)
     }
 
