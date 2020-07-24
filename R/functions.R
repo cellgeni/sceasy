@@ -160,9 +160,8 @@ loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name 
     sce
 }
 
-
 .obs2metadata <- function(obs_pd, assay='RNA') {
-    obs_df <- .regularise_df(reticulate::py_to_r(obs_pd), drop_single_values = F)
+    obs_df <- .regularise_df(reticulate::py_to_r(obs_pd), drop_single_values = FALSE)
     attr(obs_df, 'pandas.index') <- NULL
     colnames(obs_df) <- sub('n_counts', paste0('nCounts_', assay), colnames(obs_df))
     colnames(obs_df) <- sub('n_genes', paste0('nFeaturess_', assay), colnames(obs_df))
@@ -170,7 +169,7 @@ loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name 
 }
 
 .var2feature_metadata <- function(var_pd) {
-    var_df <- .regularise_df(reticulate::py_to_r(var_pd), drop_single_values = F)
+    var_df <- .regularise_df(reticulate::py_to_r(var_pd), drop_single_values = FALSE)
     attr(var_df, 'pandas.index') <- NULL
     colnames(var_df) <- sub('dispersions_norm', 'mvp.dispersion.scaled', colnames(var_df))
     colnames(var_df) <- sub('dispersions', 'mvp.dispersion', colnames(var_df))
@@ -179,121 +178,119 @@ loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name 
     return(var_df)
 }
 
-anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay = 'RNA') {
+anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay = 'RNA', use_seurat = FALSE, lzf = FALSE) {
     main_layer <- match.arg(main_layer, c('counts', 'data', 'scale.data'))
-    transfer_layers <- transfer_layers[
-        transfer_layers %in% c('data', 'counts', 'scale.data')]
-    transfer_layers <- transfer_layers[transfer_layers != main_layer]
-
     inFile <- path.expand(inFile)
+
     anndata <- reticulate::import('anndata', convert = FALSE)
     sp <- reticulate::import('scipy.sparse', convert = FALSE)
-    ad <- anndata$read_h5ad(inFile)
 
-    obs_df <- .obs2metadata(ad$obs)
-    var_df <- .var2feature_metadata(ad$var)
-
-    if (reticulate::py_to_r(sp$issparse(ad$X))) {
-        X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(ad$X)))
-    } else {
-        X <- t(reticulate::py_to_r(ad$X))
-    }
-    colnames(X) <- rownames(obs_df)
-    rownames(X) <- rownames(var_df)
-
-    if (!is.null(reticulate::py_to_r(ad$raw))) {
-        raw_var_df <- .var2feature_metadata(ad$raw$var)
-        raw_X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(ad$raw$X)))
-        colnames(raw_X) <- rownames(obs_df)
-        rownames(raw_X) <- rownames(raw_var_df)
-    } else {
-        raw_var_df <- NULL
-        raw_X <- NULL
-    }
-
-    if (main_layer == 'data') {
-        assays <- list(Seurat::CreateAssayObject(data = X))
-    } else if (main_layer == 'scale.data' && !is.null(raw_X)) {
-        assays <- list(Seurat::CreateAssayObject(data = raw_X))
-        assays[[1]] <- Seurat::SetAssayData(assays[[1]], slot = 'scale.data', new.data = X)
-    } else if (main_layer == 'counts') {
-        assays <- list(Seurat::CreateAssayObject(counts = X))
-    } else {
-        assays <- list(Seurat::CreateAssayObject(data = X))
-    }
-    names(assays) <- assay
-
-    if (main_layer == 'scale.data' && !is.null(raw_X)) {
-        assays[[assay]]@meta.features <- raw_var_df
-    } else {
-        assays[[assay]]@meta.features <- var_df
-    }
-
-    if (!is.null(reticulate::py_to_r(ad$obsm))) {
-        embed_names <- reticulate::py_to_r(ad$obsm$keys())
-        embeddings <- sapply(embed_names, function(x) reticulate::py_to_r(ad$obsm[x]), simplify = F, USE.NAMES = T)
-        for (name in embed_names) {
-            rownames(embeddings[[name]]) <- colnames(assays[[assay]])
-        }
-    }
-
-    if (!is.null(reticulate::py_to_r(ad$varm))) {
-        loading_names <- reticulate::py_to_r(ad$varm$keys())
-        loadings <- sapply(loading_names, function(x) reticulate::py_to_r(ad$varm[x]), simplify = F, USE.NAMES = T)
-        for (name in embed_names) {
-            rownames(loadings[[name]]) <- rownames(assays[[assay]])
-        }
-    }
-    dim.reducs <- vector(mode = 'list', length = length(embeddings))
-    for (i in seq(length(embeddings))) {
-        name <- names[embeddings][i]
-        embed <- embeddings[[name]]
-        loading <- if (name in names(loadings)) {
-            loadings[[name]]
+    if (use_seurat) {
+        if (lzf) {
+            tmpFile <- paste0(tools::file_path_sans_ext(inFile), '.decompressed.h5ad')
+            ad <- anndata$read(inFile)
+            ad$write(tmpFile)
+            tryCatch({
+                srt <- Seurat::ReadH5AD(tmpFile)
+            }, finally = {
+                file.remove(tmpFile)
+            })
         } else {
-            new('matrix')
+            srt <- Seurat::ReadH5AD(inFile)
         }
-        stdev <- if (name == 'X_pca' && !is.null(reticulate::py_to_r(ad$uns)) && is.null(reticulate::py_to_r(ad$uns['pca']['variance']))) {
-            as.vector(sqrt(reticulate::py_to_r(ad$uns['pca']['variance'])))
+    } else {
+        ad <- anndata$read_h5ad(inFile)
+
+        obs_df <- .obs2metadata(ad$obs)
+        var_df <- .var2feature_metadata(ad$var)
+
+        if (reticulate::py_to_r(sp$issparse(ad$X))) {
+            X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(ad$X)))
         } else {
-            numeric(0L)
+            X <- t(reticulate::py_to_r(ad$X))
         }
-        key <- switch(name, 'X_pca' = 'PC', 'X_tsne' = 'tSNE', 'X_umap' = 'UMAP')
-        dim.reducs[[i]] <- Seurat::CreateDimReducObject(
-            embeddings = embeddings[[name]],
-            loadings = loadings[[name]] %||% new('matrix'),
-            assay = assay,
-            stdev = stdev,
-            key = paste0(key, '_')
-        )
-    }
-    names(dim.reducs) <- sub('X_', '', embed_names)
+        colnames(X) <- rownames(obs_df)
+        rownames(X) <- rownames(var_df)
 
-    project_name <- sub('\\.h5ad$', '', basename(inFile))
-    srt <- new('Seurat', assays = assays, project.name = project_name, version = packageVersions('Seurat'))
-    Seurat::DefaultAssay(srt) <- assay
-    Idents(srt) <- project_name
-    for (name in names(dim.reducs)) {
-        srt[[name]] <- dim.reducs[[name]]
+        if (!is.null(reticulate::py_to_r(ad$raw))) {
+            raw_var_df <- .var2feature_metadata(ad$raw$var)
+            raw_X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(ad$raw$X)))
+            colnames(raw_X) <- rownames(obs_df)
+            rownames(raw_X) <- rownames(raw_var_df)
+        } else {
+            raw_var_df <- NULL
+            raw_X <- NULL
+        }
+
+        if (main_layer == 'scale.data' && !is.null(raw_X)) {
+            assays <- list(Seurat::CreateAssayObject(data = raw_X))
+            assays[[1]] <- Seurat::SetAssayData(assays[[1]], slot = 'scale.data', new.data = X)
+            message('X -> scale.data; raw.X -> data')
+        } else if (main_layer == 'counts') {
+            assays <- list(Seurat::CreateAssayObject(counts = X))
+            message('X -> counts')
+        } else {
+            assays <- list(Seurat::CreateAssayObject(data = X))
+            message('X -> data')
+        }
+        names(assays) <- assay
+
+        if (main_layer == 'scale.data' && !is.null(raw_X)) {
+            assays[[assay]]@meta.features <- raw_var_df
+        } else {
+            assays[[assay]]@meta.features <- var_df
+        }
+
+        project_name <- sub('\\.h5ad$', '', basename(inFile))
+        srt <- new('Seurat', assays = assays, project.name = project_name, version = packageVersion('Seurat'))
+        Seurat::DefaultAssay(srt) <- assay
+        Idents(srt) <- project_name
+
+        embed_names <- unlist(reticulate::py_to_r(ad$obsm$keys()))
+        if (length(embed_names) > 0) {
+            embeddings <- sapply(embed_names, function(x) reticulate::py_to_r(ad$obsm[x]), simplify = FALSE, USE.NAMES = TRUE)
+            names(embeddings) <- embed_names
+            for (name in embed_names) {
+                rownames(embeddings[[name]]) <- colnames(assays[[assay]])
+            }
+            message('obsm')
+
+            dim.reducs <- vector(mode = 'list', length = length(embeddings))
+            for (i in seq(length(embeddings))) {
+                name <- embed_names[i]
+                embed <- embeddings[[name]]
+                stdev <- if (name == 'X_pca' && !is.null(reticulate::py_to_r(ad$uns)) && is.null(reticulate::py_to_r(ad$uns['pca']['variance']))) {
+                    as.vector(sqrt(reticulate::py_to_r(ad$uns['pca']['variance'])))
+                } else {
+                    numeric(0L)
+                }
+                key <- switch(
+                    name,
+                    sub('_(.*)', '\\L\\1', sub('^X_', '', toupper(name)), perl=T),
+                    'X_pca' = 'PC', 'X_tsne' = 'tSNE', 'X_umap' = 'UMAP'
+                )
+                colnames(embed) <- paste0(key, '_', seq(ncol(embed)))
+                dim.reducs[[i]] <- Seurat::CreateDimReducObject(
+                    embeddings = embed,
+                    loadings = new('matrix'),
+                    assay = assay,
+                    stdev = stdev,
+                    key = paste0(key, '_')
+                )
+            }
+            names(dim.reducs) <- sub('X_', '', embed_names)
+
+            for (name in names(dim.reducs)) {
+                srt[[name]] <- dim.reducs[[name]]
+            }
+        }
     }
 
-#    if (!is.null(anndata_compression_format) && anndata_compression_format == 'lzf') {
-#        tmpFile <- paste0(tools::file_path_sans_ext(inFile), '.decompressed.h5ad')
-#        anndata <- reticulate::import('anndata', convert = FALSE)
-#        adata <- anndata$read(inFile)
-#        adata$write(tmpFile)
-#        tryCatch({
-#            srt <- Seurat::ReadH5AD(tmpFile),
-#        }, finally = {
-#            file.remove(tmpFile)
-#        })
-#    } else {
-#        srt <- Seurat::ReadH5AD(inFile)
-#    }
-#    if (!is.null(outFile)) saveRDS(object = srt, file = outFile)
+    if (!is.null(outFile)) saveRDS(object = srt, file = outFile)
 
     srt
 }
 
-#anndata2cds <- function(inFile, outFile = NULL) {
-#}
+anndata2cds <- function(inFile, outFile = NULL) {
+    message('not implemented yet')
+}
