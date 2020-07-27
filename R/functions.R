@@ -244,7 +244,7 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
         project_name <- sub('\\.h5ad$', '', basename(inFile))
         srt <- new('Seurat', assays = assays, project.name = project_name, version = packageVersion('Seurat'))
         Seurat::DefaultAssay(srt) <- assay
-        Idents(srt) <- project_name
+        Seurat::Idents(srt) <- project_name
 
         embed_names <- unlist(reticulate::py_to_r(ad$obsm$keys()))
         if (length(embed_names) > 0) {
