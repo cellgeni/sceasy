@@ -46,6 +46,13 @@ loompy <- reticulate::import('loompy')
 sceasy::convertFormat(seurat_object, from="seurat", to="anndata",
                        outFile='filename.h5ad')
 ```
+
+**AnnData to Seurat**
+
+```
+sceasy::convertFormat(h5ad_file, from="anndata", to="seurat",
+                       outFile='filename.cds')
+```
                        
 **Seurat to SingleCellExperiment**
 
