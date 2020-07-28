@@ -246,6 +246,7 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
         Seurat::DefaultAssay(srt) <- assay
         Seurat::Idents(srt) <- project_name
 
+        srt@meta.data <- obs_df
         embed_names <- unlist(reticulate::py_to_r(ad$obsm$keys()))
         if (length(embed_names) > 0) {
             embeddings <- sapply(embed_names, function(x) reticulate::py_to_r(ad$obsm[x]), simplify = FALSE, USE.NAMES = TRUE)
@@ -253,17 +254,11 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             for (name in embed_names) {
                 rownames(embeddings[[name]]) <- colnames(assays[[assay]])
             }
-            message('obsm')
 
             dim.reducs <- vector(mode = 'list', length = length(embeddings))
             for (i in seq(length(embeddings))) {
                 name <- embed_names[i]
                 embed <- embeddings[[name]]
-                stdev <- if (name == 'X_pca' && !is.null(reticulate::py_to_r(ad$uns)) && is.null(reticulate::py_to_r(ad$uns['pca']['variance']))) {
-                    as.vector(sqrt(reticulate::py_to_r(ad$uns['pca']['variance'])))
-                } else {
-                    numeric(0L)
-                }
                 key <- switch(
                     name,
                     sub('_(.*)', '\\L\\1', sub('^X_', '', toupper(name)), perl=T),
@@ -274,7 +269,7 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
                     embeddings = embed,
                     loadings = new('matrix'),
                     assay = assay,
-                    stdev = stdev,
+                    stdev = numeric(0L),
                     key = paste0(key, '_')
                 )
             }
