@@ -12,7 +12,7 @@
 }
 
 seurat2anndata <- function(
-    obj, outFile = NULL, assay = 'RNA', main_layer = 'data', transfer_layers = NULL
+    obj, outFile = NULL, assay = 'RNA', main_layer = 'data', transfer_layers = NULL, drop_single_values = TRUE
 ) {
     main_layer <- match.arg(main_layer, c('data', 'counts', 'scale.data'))
     transfer_layers <- transfer_layers[
@@ -24,9 +24,9 @@ seurat2anndata <- function(
 
     X <- Seurat::GetAssayData(object = obj, assay = assay, slot = main_layer)
 
-    obs <- .regularise_df(obj@meta.data)
+    obs <- .regularise_df(obj@meta.data, drop_single_values = drop_single_values)
 
-    var <- .regularise_df(Seurat::GetAssay(obj, assay = assay)@meta.features)
+    var <- .regularise_df(Seurat::GetAssay(obj, assay = assay)@meta.features, drop_single_values = drop_single_values)
 
     obsm <- NULL
     reductions <- names(obj@reductions)
@@ -62,7 +62,7 @@ seurat2anndata <- function(
 }
 
 sce2anndata <- function(
-    obj, outFile = NULL, main_layer = 'counts', transfer_layers = NULL
+    obj, outFile = NULL, main_layer = 'counts', transfer_layers = NULL, drop_single_values = TRUE
 ) {
     assay_names <- SummarizedExperiment::assayNames(obj)
     main_layer <- match.arg(main_layer, assay_names)
@@ -71,9 +71,9 @@ sce2anndata <- function(
 
     X <- SummarizedExperiment::assay(obj, main_layer)
 
-    obs <- .regularise_df(as.data.frame(SummarizedExperiment::colData(obj)))
+    obs <- .regularise_df(as.data.frame(SummarizedExperiment::colData(obj)), drop_single_values = drop_single_values)
 
-    var <- .regularise_df(as.data.frame(SummarizedExperiment::rowData(obj)))
+    var <- .regularise_df(as.data.frame(SummarizedExperiment::rowData(obj)), drop_single_values = drop_single_values)
 
     obsm <- NULL
     reductions <- SingleCellExperiment::reducedDimNames(obj)
@@ -147,8 +147,8 @@ seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
 }
 
 sce2loom <- function(obj, outFile, main_layer = NULL, ...) {
-    SummarizedExperiment::colData(obj) <- .regularise_df(SummarizedExperiment::colData(obj))
-    SummarizedExperiment::rowData(obj) <- .regularise_df(SummarizedExperiment::rowData(obj))
+    SummarizedExperiment::colData(obj) <- .regularise_df(SummarizedExperiment::colData(obj), drop_single_values = drop_single_values)
+    SummarizedExperiment::rowData(obj) <- .regularise_df(SummarizedExperiment::rowData(obj), drop_single_values = drop_single_values)
     writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
 }
 
