@@ -146,7 +146,7 @@ seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
     sce
 }
 
-sce2loom <- function(obj, outFile, main_layer = NULL, ...) {
+sce2loom <- function(obj, outFile, main_layer = NULL, drop_single_values = TRUE, ...) {
     SummarizedExperiment::colData(obj) <- .regularise_df(SummarizedExperiment::colData(obj), drop_single_values = drop_single_values)
     SummarizedExperiment::rowData(obj) <- .regularise_df(SummarizedExperiment::rowData(obj), drop_single_values = drop_single_values)
     writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
