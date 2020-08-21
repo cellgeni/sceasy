@@ -247,7 +247,7 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
         Seurat::Idents(srt) <- project_name
 
         srt@meta.data <- obs_df
-        embed_names <- unlist(reticulate::py_to_r(ad$obsm$keys()))
+        embed_names <- unlist(reticulate::py_to_r(ad$obsm_keys()))
         if (length(embed_names) > 0) {
             embeddings <- sapply(embed_names, function(x) reticulate::py_to_r(ad$obsm[x]), simplify = FALSE, USE.NAMES = TRUE)
             names(embeddings) <- embed_names
