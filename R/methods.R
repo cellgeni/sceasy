@@ -1,5 +1,5 @@
 convertFormat <- function(
-    obj, from = c('seurat', 'sce', 'loom'), to = c('anndata', 'loom', 'sce'), outFile = NULL,
+    obj, from = c('anndata', 'seurat', 'sce', 'loom'), to = c('anndata', 'loom', 'sce', 'seurat'), outFile = NULL,
     main_layer = NULL, ...
 ) {
     from <- match.arg(from)
