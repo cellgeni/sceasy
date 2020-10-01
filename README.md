@@ -18,11 +18,11 @@ or as an R package:
 
 To use sceasy ensure the anndata package (version has to be < 0.6.20) is installed:
 
-```conda install anndata == 0.6.19  -c bioconda```
+```conda install anndata==0.6.19  -c bioconda```
 
 In addition, please also ensure the `loompy` package (loompy version < 3.0.0) is installed:
 
-```conda install loompy == 2.0.17  -c bioconda```
+```conda install loompy==2.0.17  -c bioconda```
 
 You will also need to install reticulate package:
 
