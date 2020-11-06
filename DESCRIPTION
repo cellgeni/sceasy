@@ -1,7 +1,7 @@
 Package: sceasy
 Type: Package
 Title: A package to help convert different single-cell data formats to each other
-Version: 0.0.5
+Version: 0.0.6
 Authors@R: c(
     person('Vladimir', 'Kiselev', email='wikiselev@users.noreply.github.com', role='cre'),
     person('Ni', 'Huang', email='nh3@users.noreply.github.com', role='aut'))
