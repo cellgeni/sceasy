@@ -16,6 +16,15 @@ or as an R package:
 
 ```devtools::install_github("cellgeni/sceasy")```
 
+which will require the biconductor packages BiocManager and LoomExperiment:
+
+```
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install(c("LoomExperiment", "SingleCellExperiment"))
+```
+
 To use sceasy ensure the anndata package (version has to be < 0.6.20) is installed:
 
 ```conda install anndata==0.6.19  -c bioconda```
