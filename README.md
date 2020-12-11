@@ -29,9 +29,9 @@ To use sceasy ensure the anndata package (version has to be < 0.6.20) is install
 
 ```conda install anndata==0.6.19  -c bioconda```
 
-In addition, please also ensure the `loompy` package (loompy version < 3.0.0) is installed:
+Optionally, if you plan to convert between loom and anndata, please also ensure that the `loompy` package is installed:
 
-```conda install loompy==2.0.17  -c bioconda```
+```conda install loompy  -c bioconda```
 
 You will also need to install reticulate package:
 
