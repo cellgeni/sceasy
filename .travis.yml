@@ -53,6 +53,7 @@ script:
 #            -e 'sceasy::convertFormat(sce, from="sce", to="loom", outFile="data/pbmc3k-small_seurat3_sce_loom.loom")'
 #            -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_loom_anndata.h5ad")'
 #            -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="sce", outFile="data/pbmc3k-small_seurat3_sce_loom_sce.rds", main_layer_name="scaled")'
+            -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_anndata.h5ad", from="anndata", to="cds", outFile="data/pbmc3k-small_seurat3_anndata_cds.rds")'
 
 cache:
   directories:

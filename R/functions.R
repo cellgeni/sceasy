@@ -474,6 +474,41 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = "counts", assay 
   srt
 }
 
-anndata2cds <- function(inFile, outFile = NULL) {
-  message("not implemented yet")
+anndata2cds <- function(inFile, outFile = NULL, main_layer = 'raw', pcaName = 'X_pca', umapName = 'X_umap') {
+    anndata <- reticulate::import('anndata', convert = FALSE)
+    sp <- reticulate::import('scipy.sparse', convert = FALSE)
+    ss <- reticulate::import('scanpy_scripts', convert = FALSE)
+
+    ad <- anndata$read_h5ad(inFile)
+    obs_df <- .obs2metadata(ad$obs)
+
+    if ((main_layer == 'raw') && (!is.null(reticulate::py_to_r(ad$raw)))) {
+        var_df <- .var2feature_metadata(ad$raw$var)
+        var_df$gene_short_name <- rownames(var_df)
+    } else {
+        var_df <- .var2feature_metadata(ad$var)
+        var_df$gene_short_name <- rownames(var_df)
+    }
+
+    count_x <- ss$lib$lognorm_to_counts(ad$raw$X)
+    X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(count_x)))
+    colnames(X) <- rownames(obs_df)
+    rownames(X) <- rownames(var_df)
+
+    cds1 <- monocle3::new_cell_data_set(expression_data = X, cell_metadata = obs_df, gene_metadata = var_df)
+
+    embed_names <- unlist(reticulate::py_to_r(ad$obsm$keys()))
+    if (pcaName %in% embed_names) {
+        pcs <- reticulate::py_to_r(ad$obsm[pcaName])
+        pcls <- reticulate::py_to_r(ad$varm['PCs'])
+        rownames(pcls) <- rownames(var_df)
+        colnames(pcls) <- paste0('PC', seq(ncol(pcls)))
+        cds1@preprocess_aux <- SimpleList(gene_loadings=pcls)
+    }
+    if (umapName %in% embed_names) {
+        umap <- py_to_r(ad$obsm[umapName])
+        monocle3::reducedDims(cds1) <- SimpleList(UMAP=umap)
+    }
+
+    cds1
 }
