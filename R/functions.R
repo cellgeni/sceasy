@@ -477,7 +477,6 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = "counts", assay 
 anndata2cds <- function(inFile, outFile = NULL, main_layer = 'raw', pcaName = 'X_pca', umapName = 'X_umap') {
     anndata <- reticulate::import('anndata', convert = FALSE)
     sp <- reticulate::import('scipy.sparse', convert = FALSE)
-    ss <- reticulate::import('scanpy_scripts', convert = FALSE)
 
     ad <- anndata$read_h5ad(inFile)
     obs_df <- .obs2metadata(ad$obs)
@@ -490,7 +489,16 @@ anndata2cds <- function(inFile, outFile = NULL, main_layer = 'raw', pcaName = 'X
         var_df$gene_short_name <- rownames(var_df)
     }
 
-    count_x <- ss$lib$lognorm_to_counts(ad$raw$X)
+    count_x <- tryCatch({
+        ss <- reticulate::import('scanpy_scripts', convert = FALSE)
+        ss$lib$lognorm_to_counts(ad$raw$X)
+    }, error={
+        tryCatch({
+            ad$raw$X
+        }, error={
+            ad$X
+        }, warning={})
+    }, warning={}, finally={})
     X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(count_x)))
     colnames(X) <- rownames(obs_df)
     rownames(X) <- rownames(var_df)
