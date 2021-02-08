@@ -64,6 +64,9 @@ seurat2anndata <- function(
 sce2anndata <- function(
     obj, outFile = NULL, main_layer = 'counts', transfer_layers = NULL, drop_single_values = TRUE
 ) {
+    if exists('updateObject', where='package:SingleCellExperiment', mode='function') {
+        obj <- SingleCellExperiment::updateObject(obj)
+    }
     assay_names <- SummarizedExperiment::assayNames(obj)
     main_layer <- match.arg(main_layer, assay_names)
     transfer_layers <- transfer_layers[transfer_layers %in% assay_names]
@@ -147,6 +150,9 @@ seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
 }
 
 sce2loom <- function(obj, outFile, main_layer = NULL, drop_single_values = TRUE, ...) {
+    if exists('updateObject', where='package:SingleCellExperiment', mode='function') {
+        obj <- SingleCellExperiment::updateObject(obj)
+    }
     SummarizedExperiment::colData(obj) <- .regularise_df(SummarizedExperiment::colData(obj), drop_single_values = drop_single_values)
     SummarizedExperiment::rowData(obj) <- .regularise_df(SummarizedExperiment::rowData(obj), drop_single_values = drop_single_values)
     writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
@@ -188,7 +194,7 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
     if (use_seurat) {
         if (lzf) {
             tmpFile <- paste0(tools::file_path_sans_ext(inFile), '.decompressed.h5ad')
-            ad <- anndata$read(inFile)
+            ad <- anndata$read_h5ad(inFile)
             ad$write(tmpFile)
             tryCatch({
                 srt <- Seurat::ReadH5AD(tmpFile)
