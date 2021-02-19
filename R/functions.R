@@ -232,6 +232,10 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             assays <- list(Seurat::CreateAssayObject(data = raw_X))
             assays[[1]] <- Seurat::SetAssayData(assays[[1]], slot = 'scale.data', new.data = X)
             message('X -> scale.data; raw.X -> data')
+        } else if (main_layer == 'data' && !is.null(raw_X)) {
+            assays <- list(Seurat::CreateAssayObject(counts = raw_X))
+            assays[[1]] <- Seurat::SetAssayData(assays[[1]], slot = 'data', new.data = X)
+            message('X -> data; raw.X -> counts')
         } else if (main_layer == 'counts') {
             assays <- list(Seurat::CreateAssayObject(counts = X))
             message('X -> counts')
