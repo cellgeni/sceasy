@@ -64,6 +64,7 @@ seurat2anndata <- function(
 sce2anndata <- function(
     obj, outFile = NULL, main_layer = 'counts', transfer_layers = NULL, drop_single_values = TRUE
 ) {
+    library('SingleCellExperiment')
     if (exists('updateObject', where='package:SingleCellExperiment', mode='function')) {
         obj <- SingleCellExperiment::updateObject(obj)
     }
@@ -150,6 +151,7 @@ seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
 }
 
 sce2loom <- function(obj, outFile, main_layer = NULL, drop_single_values = TRUE, ...) {
+    library('SingleCellExperiment')
     if (exists('updateObject', where='package:SingleCellExperiment', mode='function')) {
         obj <- SingleCellExperiment::updateObject(obj)
     }
