@@ -33,7 +33,10 @@ before_install:
       conda config --add channels defaults;
       conda config --add channels bioconda;
       conda config --add channels conda-forge;
-      conda create -q -y -n $TEST_ENV r-seurat=3.1.0 bioconductor-singlecellexperiment bioconductor-loomexperiment=1.2.0 r-reticulate r-devtools scipy=1.2.1 anndata=0.6.19 loompy=2 h5py=2.9.0;
+      conda create -q -y -n $TEST_ENV r-seurat=3.1.0 r-reticulate r-devtools scipy=1.2.1 anndata=0.6.19 loompy=2 h5py=2.9.0;
+      source activate "$TEST_ENV"
+      Rscript -e 'install.packages("BiocManager"); BiocManager::install("SingleCellExperiment"); BiocManager::install("loomexperiment")'
+      conda deactivate
     fi
 
 install:
