@@ -227,6 +227,12 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             raw_var_df <- NULL
             raw_X <- NULL
         }
+        
+        if(!is.null(raw_X) & nrow(X) != nrow(raw_X) & main_layer != 'counts') {
+            message("Raw layer was found with different number of genes than main layer, resizing X and raw.X to match dimensions")
+            raw_X <- raw_X[rownames(raw_X) %in% rownames(X), , drop=F ]
+            X <- X[rownames(raw_X), , drop=F]
+        }
 
         if (main_layer == 'scale.data' && !is.null(raw_X)) {
             assays <- list(Seurat::CreateAssayObject(data = raw_X))
