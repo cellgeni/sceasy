@@ -64,7 +64,7 @@ seurat2anndata <- function(
 sce2anndata <- function(
     obj, outFile = NULL, main_layer = 'counts', transfer_layers = NULL, drop_single_values = TRUE
 ) {
-    if (exists('updateObject', where='package:SingleCellExperiment', mode='function')) {
+    if (exists('updateObject', where=loadNameSpace('SingleCellExperiment'), mode='function')) {
         obj <- SingleCellExperiment::updateObject(obj)
     }
     assay_names <- SummarizedExperiment::assayNames(obj)
@@ -150,7 +150,7 @@ seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
 }
 
 sce2loom <- function(obj, outFile, main_layer = NULL, drop_single_values = TRUE, ...) {
-    if (exists('updateObject', where='package:SingleCellExperiment', mode='function')) {
+    if (exists('updateObject', where=loadNameSpace('SingleCellExperiment'), mode='function')) {
         obj <- SingleCellExperiment::updateObject(obj)
     }
     SummarizedExperiment::colData(obj) <- .regularise_df(SummarizedExperiment::colData(obj), drop_single_values = drop_single_values)
