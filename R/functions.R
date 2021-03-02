@@ -64,9 +64,9 @@ seurat2anndata <- function(
 sce2anndata <- function(
     obj, outFile = NULL, main_layer = 'counts', transfer_layers = NULL, drop_single_values = TRUE
 ) {
-    if (exists('updateObject', where='package:SingleCellExperiment', mode='function')) {
-        obj <- SingleCellExperiment::updateObject(obj)
-    }
+    #if (exists('updateObject', where=loadNamespace('SingleCellExperiment'), mode='function')) {
+    #    obj <- SingleCellExperiment::updateObject(obj)
+    #}
     assay_names <- SummarizedExperiment::assayNames(obj)
     main_layer <- match.arg(main_layer, assay_names)
     transfer_layers <- transfer_layers[transfer_layers %in% assay_names]
@@ -150,9 +150,9 @@ seurat2sce <- function(obj, outFile = NULL, main_layer=NULL, assay='RNA', ...) {
 }
 
 sce2loom <- function(obj, outFile, main_layer = NULL, drop_single_values = TRUE, ...) {
-    if (exists('updateObject', where='package:SingleCellExperiment', mode='function')) {
-        obj <- SingleCellExperiment::updateObject(obj)
-    }
+    #if (exists('updateObject', where=loadNamespace('SingleCellExperiment'), mode='function')) {
+    #    obj <- SingleCellExperiment::updateObject(obj)
+    #}
     SummarizedExperiment::colData(obj) <- .regularise_df(SummarizedExperiment::colData(obj), drop_single_values = drop_single_values)
     SummarizedExperiment::rowData(obj) <- .regularise_df(SummarizedExperiment::rowData(obj), drop_single_values = drop_single_values)
     writeExchangeableLoom(obj, outFile, main_layer = main_layer, ...)
@@ -232,6 +232,15 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             assays <- list(Seurat::CreateAssayObject(data = raw_X))
             assays[[1]] <- Seurat::SetAssayData(assays[[1]], slot = 'scale.data', new.data = X)
             message('X -> scale.data; raw.X -> data')
+        } else if (main_layer == 'data' && !is.null(raw_X)) {
+            if (nrow(X) != nrow(raw_X)) {
+                message("Raw layer was found with different number of genes than main layer, resizing X and raw.X to match dimensions")
+                raw_X <- raw_X[rownames(raw_X) %in% rownames(X), , drop=F]
+                X <- X[rownames(raw_X), , drop=F]
+            }
+            assays <- list(Seurat::CreateAssayObject(counts = raw_X))
+            assays[[1]] <- Seurat::SetAssayData(assays[[1]], slot = 'data', new.data = X)
+            message('X -> data; raw.X -> counts')
         } else if (main_layer == 'counts') {
             assays <- list(Seurat::CreateAssayObject(counts = X))
             message('X -> counts')
