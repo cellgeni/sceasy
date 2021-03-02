@@ -227,7 +227,7 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             raw_var_df <- NULL
             raw_X <- NULL
         }
-        
+
         if (main_layer == 'scale.data' && !is.null(raw_X)) {
             assays <- list(Seurat::CreateAssayObject(data = raw_X))
             assays[[1]] <- Seurat::SetAssayData(assays[[1]], slot = 'scale.data', new.data = X)
