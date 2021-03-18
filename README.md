@@ -25,9 +25,9 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install(c("LoomExperiment", "SingleCellExperiment"))
 ```
 
-To use sceasy ensure the anndata package (version has to be < 0.6.20) is installed:
+To use sceasy ensure the anndata package (with scipy==1.2.1) is installed:
 
-```conda install anndata==0.6.19  -c bioconda```
+```conda install anndata==0.6.19 scipy==1.2.1 -c bioconda```
 
 Optionally, if you plan to convert between loom and anndata, please also ensure that the `loompy` package is installed:
 
