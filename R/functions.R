@@ -301,7 +301,7 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             #### Handle R version of anndata ####
             embeddings <- sapply(embed_names, function(x){
                 if(is_robject){
-                    ad$obsm[x]
+                    ad$obsm[[x]]
                 }else { reticulate::py_to_r(ad$obsm[x]) }
             }, simplify = FALSE, USE.NAMES = TRUE)
             names(embeddings) <- embed_names
