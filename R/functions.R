@@ -167,7 +167,10 @@ loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name 
 }
 
 .obs2metadata <- function(obs_pd, assay='RNA') {
-    obs_df <- .regularise_df(reticulate::py_to_r(obs_pd), drop_single_values = FALSE)
+    #### May not be python object if R package version of anndata was used
+    is_robject <- class(obs_pd)[1] %in% c("data.frame","data_frame","data_frame_","tibble","data.table")
+    if(!is_robject) obs_pd <- reticulate::py_to_r(obs_pd)
+    obs_df <- .regularise_df(obs_pd, drop_single_values = FALSE)
     attr(obs_df, 'pandas.index') <- NULL
     colnames(obs_df) <- sub('n_counts', paste0('nCounts_', assay), colnames(obs_df))
     colnames(obs_df) <- sub('n_genes', paste0('nFeaturess_', assay), colnames(obs_df))
@@ -175,7 +178,10 @@ loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name 
 }
 
 .var2feature_metadata <- function(var_pd) {
-    var_df <- .regularise_df(reticulate::py_to_r(var_pd), drop_single_values = FALSE)
+    #### May not be python object if R package version of anndata was used
+    is_robject <- class(var_pd)[1] %in% c("data.frame","data_frame","data_frame_","tibble","data.table")
+    if(!is_robject) var_pd <- reticulate::py_to_r(var_pd)
+    var_df <- .regularise_df(var_pd, drop_single_values = FALSE)
     attr(var_df, 'pandas.index') <- NULL
     colnames(var_df) <- sub('dispersions_norm', 'mvp.dispersion.scaled', colnames(var_df))
     colnames(var_df) <- sub('dispersions', 'mvp.dispersion', colnames(var_df))
@@ -184,13 +190,43 @@ loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name 
     return(var_df)
 }
 
+.transpose_X <- function(X,
+                         is_robject=F){
+    #### Handle R version of anndata ####
+    is_sparse <- if(is_robject){
+        class(X)[1] %in% c("dgCMatrix","dgRMatrix")
+    } else{reticulate::py_to_r(sp$issparse(X))}
+    
+    if (is_sparse) {
+        if(is_robject){
+            X <- SparseM::t(X)
+        } else {
+            X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(X)))
+        }
+    } else {
+        if(is_robject){
+            X <- t(X)
+        }else {
+            X <- t(reticulate::py_to_r(X))
+        }
+    }
+    return(X)
+}
+
 anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay = 'RNA', use_seurat = FALSE, lzf = FALSE) {
     main_layer <- match.arg(main_layer, c('counts', 'data', 'scale.data'))
+    is_robject <- any(class(inFile) %in% c("AnnDataR6","R6"))
+    if(is_robject){
+        ad <- inFile
+        if(inFile$isbacked){
+            inFile <- inFile$filename
+        } else {inFile <- tempfile()}
+    }
     inFile <- path.expand(inFile)
-
+    
     anndata <- reticulate::import('anndata', convert = FALSE)
     sp <- reticulate::import('scipy.sparse', convert = FALSE)
-
+    
     if (use_seurat) {
         if (lzf) {
             tmpFile <- paste0(tools::file_path_sans_ext(inFile), '.decompressed.h5ad')
@@ -205,29 +241,27 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             srt <- Seurat::ReadH5AD(inFile)
         }
     } else {
-        ad <- anndata$read_h5ad(inFile)
-
-        obs_df <- .obs2metadata(ad$obs)
-        var_df <- .var2feature_metadata(ad$var)
-
-        if (reticulate::py_to_r(sp$issparse(ad$X))) {
-            X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(ad$X)))
-        } else {
-            X <- t(reticulate::py_to_r(ad$X))
-        }
+        #### Check if inFile is the path name or the actual anndata object
+        if(!is_robject){ ad <- anndata$read_h5ad(inFile) }
+        obs_df <- .obs2metadata(obs_pd = ad$obs)
+        var_df <- .var2feature_metadata(var_pd = ad$var)
+        
+        #### Handle R version of anndata ####
+        X <- .transpose_X(ad$X, is_robject = is_robject)
         colnames(X) <- rownames(obs_df)
         rownames(X) <- rownames(var_df)
-
-        if (!is.null(reticulate::py_to_r(ad$raw))) {
+        
+        raw <- if(is_robject) ad$raw else reticulate::py_to_r(ad$raw)
+        if (!is.null(raw)) {
             raw_var_df <- .var2feature_metadata(ad$raw$var)
-            raw_X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(ad$raw$X)))
+            raw_X <- .transpose_X(ad$raw$X, is_robject = is_robject)
             colnames(raw_X) <- rownames(obs_df)
             rownames(raw_X) <- rownames(raw_var_df)
         } else {
             raw_var_df <- NULL
             raw_X <- NULL
         }
-
+        
         if (main_layer == 'scale.data' && !is.null(raw_X)) {
             assays <- list(Seurat::CreateAssayObject(data = raw_X))
             assays[[1]] <- Seurat::SetAssayData(assays[[1]], slot = 'scale.data', new.data = X)
@@ -249,27 +283,32 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             message('X -> data')
         }
         names(assays) <- assay
-
+        
         if (main_layer == 'scale.data' && !is.null(raw_X)) {
             assays[[assay]]@meta.features <- raw_var_df
         } else {
             assays[[assay]]@meta.features <- var_df
         }
-
+        
         project_name <- sub('\\.h5ad$', '', basename(inFile))
         srt <- new('Seurat', assays = assays, project.name = project_name, version = packageVersion('Seurat'))
         Seurat::DefaultAssay(srt) <- assay
         Seurat::Idents(srt) <- project_name
-
+        
         srt@meta.data <- obs_df
-        embed_names <- unlist(reticulate::py_to_r(ad$obsm_keys()))
+        embed_names <- if(is_robject) ad$obsm_keys() else unlist(reticulate::py_to_r(ad$obsm_keys()))
         if (length(embed_names) > 0) {
-            embeddings <- sapply(embed_names, function(x) reticulate::py_to_r(ad$obsm[x]), simplify = FALSE, USE.NAMES = TRUE)
+            #### Handle R version of anndata ####
+            embeddings <- sapply(embed_names, function(x){
+                if(is_robject){
+                    ad$obsm[[x]]
+                }else { reticulate::py_to_r(ad$obsm[x]) }
+            }, simplify = FALSE, USE.NAMES = TRUE)
             names(embeddings) <- embed_names
             for (name in embed_names) {
                 rownames(embeddings[[name]]) <- colnames(assays[[assay]])
             }
-
+            
             dim.reducs <- vector(mode = 'list', length = length(embeddings))
             for (i in seq(length(embeddings))) {
                 name <- embed_names[i]
@@ -289,15 +328,15 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
                 )
             }
             names(dim.reducs) <- sub('X_', '', embed_names)
-
+            
             for (name in names(dim.reducs)) {
                 srt[[name]] <- dim.reducs[[name]]
             }
         }
     }
-
+    
     if (!is.null(outFile)) saveRDS(object = srt, file = outFile)
-
+    
     srt
 }
 
