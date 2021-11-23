@@ -296,6 +296,10 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
         }
     }
 
+    uns_keys <- reticulate::py_to_r(ad$uns_keys())
+    misc <- sapply(uns_keys, function(x) reticulate::py_to_r(ad$uns[x]), USE.NAMES = TRUE)
+    srt@misc <- misc
+
     if (!is.null(outFile)) saveRDS(object = srt, file = outFile)
 
     srt
