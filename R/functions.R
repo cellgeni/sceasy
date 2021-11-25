@@ -184,7 +184,13 @@ loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name 
     return(var_df)
 }
 
-anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay = 'RNA', use_seurat = FALSE, lzf = FALSE) {
+.uns2misc <- function(ad_pd, target_uns_keys = list()) {
+    uns_keys <- intersect(target_uns_keys, reticulate::py_to_r(ad_pd$uns_keys()))
+    misc <- sapply(uns_keys, function(x) reticulate::py_to_r(ad_pd$uns[x]), simplify = FALSE, USE.NAMES = TRUE)
+    return(misc)
+}
+
+anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay = 'RNA', use_seurat = FALSE, lzf = FALSE, target_uns_keys = list()) {
     main_layer <- match.arg(main_layer, c('counts', 'data', 'scale.data'))
     inFile <- path.expand(inFile)
 
@@ -295,6 +301,8 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = 'counts', assay 
             }
         }
     }
+
+    srt@misc <- .uns2misc(ad, target_uns_keys = target_uns_keys)
 
     if (!is.null(outFile)) saveRDS(object = srt, file = outFile)
 
