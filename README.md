@@ -1,6 +1,6 @@
 # sceasy
 
-`sceasy` is a package that helps easy conversion of different single-cell data formats to each other. Converting to AnnData creates a file that can be directly used in [cellxgene](https://github.com/chanzuckerberg/cellxgene) which is an interactive explorer for single-cell transcriptomics datasets.
+`sceasy` (pronounced "see-zee") is a package that helps easy conversion of different single-cell data formats to each other. Converting to AnnData creates a file that can be directly used in [cellxgene](https://github.com/chanzuckerberg/cellxgene) which is an interactive explorer for single-cell transcriptomics datasets.
 
 
 > ### Warning
