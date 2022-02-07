@@ -490,24 +490,28 @@ anndata2cds <- function(inFile, outFile = NULL, main_layer = "raw", pcaName = "X
     var_df$gene_short_name <- rownames(var_df)
   }
 
-  count_x <- tryCatch(
-    {
-      ss <- reticulate::import("scanpy_scripts", convert = FALSE)
-      ss$lib$lognorm_to_counts(ad$raw$X)
-    },
-    error = function(e) {
-      return(tryCatch(
-        {
-          ad$raw$X
-        },
-        error = function(ee) {
-          return(ad$X)
-        },
-        warning = function(ww) {}
-      ))
-    },
-    warning = function(w) {}
-  )
+  if (main_layer == "raw") {
+    count_x <- tryCatch(
+      {
+        ss <- reticulate::import("scanpy_scripts", convert = FALSE)
+        ss$lib$lognorm_to_counts(ad$raw$X)
+      },
+      error = function(e) {
+        return(tryCatch(
+          {
+            ad$raw$X
+          },
+          error = function(ee) {
+            return(ad$X)
+          },
+          warning = function(ww) {}
+        ))
+      },
+      warning = function(w) {}
+    )
+  } else {
+    count_x <- ad$X
+  }
   X <- Matrix::t(reticulate::py_to_r(sp$csc_matrix(count_x)))
   colnames(X) <- rownames(obs_df)
   rownames(X) <- rownames(var_df)
