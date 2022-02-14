@@ -325,10 +325,10 @@ loom2sce <- function(inFile, outFile = NULL, main_layer = NULL, main_layer_name 
   return(var_df)
 }
 
-.uns2misc <- function(ad_pd, target_uns_keys = list()) {
-    uns_keys <- intersect(target_uns_keys, reticulate::py_to_r(ad_pd$uns_keys()))
-    misc <- sapply(uns_keys, function(x) reticulate::py_to_r(ad_pd$uns[x]), simplify = FALSE, USE.NAMES = TRUE)
-    return(misc)
+.uns2misc <- function(ad, target_uns_keys = list()) {
+  uns_keys <- intersect(target_uns_keys, reticulate::py_to_r(ad$uns_keys()))
+  misc <- sapply(uns_keys, function(x) reticulate::py_to_r(ad$uns[x]), simplify = FALSE, USE.NAMES = TRUE)
+  return(misc)
 }
 
 #' Convert AnnData object to Seurat object
