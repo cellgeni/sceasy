@@ -10,10 +10,6 @@ Description: Convert Seurat, SingleCellExperiment, Loom object to AnnData object
 Depends:
     R (>= 3.5.1),
     reticulate
-Imports:
-    Seurat (>= 3.0.1),
-    SingleCellExperiment (>= 1.4.0),
-    LoomExperiment (>= 1.1.5)
 SystemRequirements:
     anndata,
     loompy
