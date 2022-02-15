@@ -474,13 +474,30 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = "counts", assay 
   srt
 }
 
-anndata2cds <- function(inFile, outFile = NULL, main_layer = "raw", pcaName = "X_pca", umapName = "X_umap") {
+#' Convert AnnData object to monocle3 CDS object
+#'
+#' This function converts an AnnData object to a monocle3 CDS object
+#'
+#' @param inFile Path to an input AnnData object on disk (str)
+#' @param outFile Save output CDS to this file if specified (str or NULL)
+#' @param main_layer Name of the slot in AnnData to be converted, can be "X",
+#'   "raw", default "X" (str)
+#' @param pcaName Key of PCA in AnnData.obsm to be transferred (str or NULL)
+#' @param umapName Key of UMAP in AnnData.obsm to be transferred (str or NULL)
+#'
+#' @return CDS object
+#'
+#' @import reticulate
+#' @import Matrix
+anndata2cds <- function(inFile, outFile = NULL, main_layer = "X", pcaName = "X_pca", umapName = "X_umap") {
   builtins <- reticulate::import_builtins(convert = FALSE)
   anndata <- reticulate::import("anndata", convert = FALSE)
   sp <- reticulate::import("scipy.sparse", convert = FALSE)
 
   ad <- anndata$read_h5ad(inFile)
   obs_df <- .obs2metadata(ad$obs)
+
+  if (is.null(main_layer)) main_layer <- "X"
 
   if ((main_layer == "raw") && (!is.null(reticulate::py_to_r(ad$raw)))) {
     var_df <- .var2feature_metadata(ad$raw$var)
@@ -520,18 +537,20 @@ anndata2cds <- function(inFile, outFile = NULL, main_layer = "raw", pcaName = "X
   cds1 <- monocle3::new_cell_data_set(expression_data = X, cell_metadata = obs_df, gene_metadata = var_df)
 
   embed_names <- reticulate::py_to_r(builtins$list(ad$obsm$keys()))
-  if (pcaName %in% embed_names || umapName %in% embed_names) {
+  if ((!is.null(pcaName) && pcaName %in% embed_names) || (!is.null(umapName) && umapName %in% embed_names)) {
     embeds <- SimpleList()
-    if (pcaName %in% embed_names) {
+    if (!is.null(pcaName) && pcaName %in% embed_names) {
       pcs <- reticulate::py_to_r(ad$obsm[pcaName])
       embeds$PCA <- pcs
     }
-    if (umapName %in% embed_names) {
+    if (!is.null(umapName) && umapName %in% embed_names) {
       umap <- reticulate::py_to_r(ad$obsm[umapName])
       embeds$UMAP <- umap
     }
     SingleCellExperiment::reducedDims(cds1) <- embeds
   }
+
+  if (!is.null(outFile)) saveRDS(object = cds1, file = outFile)
 
   cds1
 }
