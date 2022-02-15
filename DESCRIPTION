@@ -13,7 +13,7 @@ Depends:
 Suggests:
     Seurat (>= 3.0.1),
     SingleCellExperiment (>= 1.4.0),
-    LoomExperiment (>= 1.1.5)
+    LoomExperiment (>= 1.1.5),
     monocle3 (>= 0.2.0)
 SystemRequirements:
     anndata,
