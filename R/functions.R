@@ -256,7 +256,11 @@ sce2loom <- function(obj, outFile, main_layer = NULL, drop_single_values = TRUE,
   scle <- LoomExperiment::SingleCellLoomExperiment(obj)
 
   if (!is.null(outFile)) {
-    saveRDS(scle, outFile)
+    LoomExperiment::export(
+      scle, outFile,
+      matrix = ifelse(!is.null(main_layer) && main_layer %in% SummarizedExperiment::assayNames(scle), main_layer, SummarizedExperiment::assayNames(scle)[1]),
+      colnames_attr = "obs_names", rownames_attr = "var_names"
+    )
   }
 
   scle
