@@ -11,7 +11,7 @@
 #'   "scale.data", etc (str)
 #'
 #' @return Output object
-convertFormat <- function(obj, from = c("anndata", "seurat", "sce", "loom"), to = c("anndata", "loom", "sce", "seurat"), outFile = NULL,
+convertFormat <- function(obj, from = c("anndata", "seurat", "sce", "loom"), to = c("anndata", "loom", "sce", "seurat", "cds"), outFile = NULL,
                           main_layer = NULL, ...) {
   from <- match.arg(from)
   to <- match.arg(to)
