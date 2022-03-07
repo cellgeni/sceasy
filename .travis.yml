@@ -33,7 +33,7 @@ before_install:
       conda config --add channels defaults;
       conda config --add channels bioconda;
       conda config --add channels conda-forge;
-      conda create -q -y -n $TEST_ENV r-reticulate r-remotes anndata loompy;
+      conda create -q -y -n $TEST_ENV r-reticulate anndata loompy;
       conda install -q -y -n $TEST_ENV bioconductor-singlecellexperiment bioconductor-loomexperiment r-seurat=4 "r-deldir>=1.0.2" r-monocle3;
     fi;
 
@@ -43,12 +43,11 @@ install:
 
 before_script:
   - mkdir -p data
+  - wget http://seurat.nygenome.org/src/contrib/pbmc3k.SeuratData_3.1.4.tar.gz
+  - tar xzvf pbmc3k.SeuratData_3.1.4.tar.gz
 
 script:
-  - Rscript -e 'remotes::install_github("satijalab/seurat-data", dependencies=F)'
-            -e 'library(SeuratData)'
-            -e 'InstallData("pbmc3k")'
-            -e 'data("pbmc3k")'
+  - Rscript -e 'load("pbmc3k.SeuratData/data/pbmc3k.rda")'
             -e 'library(sceasy)'
             -e 'srt <- pbmc3k'
             -e 'dir.create("data")'
