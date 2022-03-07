@@ -34,7 +34,7 @@ before_install:
       conda config --add channels bioconda;
       conda config --add channels conda-forge;
       conda create -q -y -n $TEST_ENV r-reticulate anndata loompy;
-      conda install -q -y -n $TEST_ENV bioconductor-singlecellexperiment bioconductor-loomexperiment "r-seurat=3" "r-spatstat=1.64_1" r-monocle3;
+      conda install -q -y -n $TEST_ENV bioconductor-singlecellexperiment bioconductor-loomexperiment r-seurat=4 r-monocle3;
     fi;
 
 install:

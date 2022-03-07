@@ -423,6 +423,7 @@ anndata2seurat <- function(inFile, outFile = NULL, main_layer = "counts", assay 
       message("X -> data")
     }
     names(assays) <- assay
+    Seurat::Key(assays[[assay]]) <- paste0(tolower(assay), "_")
 
     if (main_layer == "scale.data" && !is.null(raw_X)) {
       assays[[assay]]@meta.features <- raw_var_df
