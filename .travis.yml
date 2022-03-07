@@ -33,7 +33,7 @@ before_install:
       conda config --add channels defaults;
       conda config --add channels bioconda;
       conda config --add channels conda-forge;
-      conda create -q -y -n $TEST_ENV r-reticulate anndata loompy;
+      conda create -q -y -n $TEST_ENV r-reticulate r-remotes anndata loompy;
       conda install -q -y -n $TEST_ENV bioconductor-singlecellexperiment bioconductor-loomexperiment r-seurat=4 "r-deldir>=1.0.2" r-monocle3;
     fi;
 
@@ -45,16 +45,20 @@ before_script:
   - mkdir -p data
 
 script:
-  - Rscript -e 'library(sceasy)'
-            -e 'srt <- Seurat::pbmc_small'
+  - Rscript -e 'remotes::install_github("satijalab/seurat-data", dependencies=F)'
+            -e 'library(SeuratData)'
+            -e 'InstallData("pbmc3k")'
+            -e 'data("pbmc3k")'
+            -e 'library(sceasy)'
+            -e 'srt <- pbmc3k'
             -e 'dir.create("data")'
-            -e 'sceasy::convertFormat(srt, from="seurat", to="anndata", outFile="data/pbmc3k-small_seurat3_anndata.h5ad")'
-            -e 'sce <- sceasy::convertFormat(srt, from="seurat", to="sce", outFile="data/pbmc3k-small_seurat3_sce.rds")'
-            -e 'sceasy::convertFormat(sce, from="sce", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_anndata.h5ad")'
-            -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_anndata.h5ad", from="anndata", to="cds", outFile="data/pbmc3k-small_seurat3_anndata_cds.rds")'
-            -e 'sceasy::convertFormat(sce, from="sce", to="loom", outFile="data/pbmc3k-small_seurat3_sce_loom.loom")'
-            -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="anndata", outFile="data/pbmc3k-small_seurat3_sce_loom_anndata.h5ad")'
-            -e 'sceasy::convertFormat("data/pbmc3k-small_seurat3_sce_loom.loom", from="loom", to="sce", outFile="data/pbmc3k-small_seurat3_sce_loom_sce.rds", main_layer_name="scaled")'
+            -e 'sceasy::convertFormat(srt, from="seurat", to="anndata", outFile="data/pbmc3k_seurat_anndata.h5ad")'
+            -e 'sce <- sceasy::convertFormat(srt, from="seurat", to="sce", outFile="data/pbmc3k_seurat_sce.rds")'
+            -e 'sceasy::convertFormat(sce, from="sce", to="anndata", outFile="data/pbmc3k_seurat_sce_anndata.h5ad")'
+            -e 'sceasy::convertFormat("data/pbmc3k_seurat_anndata.h5ad", from="anndata", to="cds", outFile="data/pbmc3k_seurat_anndata_cds.rds")'
+            -e 'sceasy::convertFormat(sce, from="sce", to="loom", outFile="data/pbmc3k_seurat_sce_loom.loom")'
+            -e 'sceasy::convertFormat("data/pbmc3k_seurat_sce_loom.loom", from="loom", to="anndata", outFile="data/pbmc3k_seurat_sce_loom_anndata.h5ad")'
+            -e 'sceasy::convertFormat("data/pbmc3k_seurat_sce_loom.loom", from="loom", to="sce", outFile="data/pbmc3k_seurat_sce_loom_sce.rds", main_layer_name="scaled")'
 
 cache:
   directories:
