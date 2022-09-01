@@ -25,7 +25,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install(c("LoomExperiment", "SingleCellExperiment"))
 ```
 
-To use sceasy ensure the anndata package (with scipy==1.2.1) is installed:
+To use sceasy ensure the anndata package is installed:
 
 ```conda install anndata scipy -c bioconda```
 
