@@ -3,8 +3,13 @@
 `sceasy` is a package that helps easy conversion of different single-cell data formats to each other. Converting to AnnData creates a file that can be directly used in [cellxgene](https://github.com/chanzuckerberg/cellxgene) which is an interactive explorer for single-cell transcriptomics datasets.
 
 
+| 💡 for h5da to rds conversion also see [https://github.com/cellgeni/schard](https://github.com/cellgeni/schard) |
+| ----------------------------------------------------------------------------------------------- |
+
+
 > ### Warning
 > Before installing the conda packages below please first create a new conda environment EnvironmentName and activate it. Everything else can be installed in R.
+
 
 ## Installation
 
