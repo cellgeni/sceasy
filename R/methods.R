@@ -13,7 +13,9 @@
 #' @return Output object
 convertFormat <- function(obj, from = c("anndata", "seurat", "sce", "loom"), to = c("anndata", "loom", "sce", "seurat", "cds"), outFile = NULL,
                           main_layer = NULL, ...) {
+  from <- tolower(x = from)
   from <- match.arg(from)
+  to <- tolower(x = to)
   to <- match.arg(to)
 
   tryCatch(
