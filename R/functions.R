@@ -498,7 +498,7 @@ anndata2cds <- function(inFile, outFile = NULL, main_layer = "X", pcaName = "X_p
   builtins <- reticulate::import_builtins(convert = FALSE)
   anndata <- reticulate::import("anndata", convert = FALSE)
   sp <- reticulate::import("scipy.sparse", convert = FALSE)
-
+  inFile <- path.expand(inFile)
   ad <- anndata$read_h5ad(inFile)
   obs_df <- .obs2metadata(ad$obs)
 
